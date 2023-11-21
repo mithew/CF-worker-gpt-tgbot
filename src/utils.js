@@ -1,5 +1,5 @@
 import {CONST, DATABASE, ENV} from './env.js';
-import {gpt3TokensCounter} from './gpt3.js';
+import {gpt3TokensCounter} from './vendors/gpt3.js';
 
 /**
  * @param {number} length
@@ -93,14 +93,13 @@ export function errorToString(e) {
 /**
  * @param {object} config
  * @param {string} key
- * @param {any} value
- * @param {object} types
+ * @param {string} value
  */
-export function mergeConfig(config, key, value, types) {
-  const type = (types && types[key]) || typeof config[key];
+export function mergeConfig(config, key, value) {
+  const type = typeof config[key];
   switch (type) {
     case 'number':
-      config[key] = Number(value);
+      config[key] = parseInt(value, 10);
       break;
     case 'boolean':
       config[key] = value === 'true';
@@ -127,7 +126,29 @@ export async function tokensCounter() {
   let counter = (text) => Array.from(text).length;
   try {
     if (ENV.GPT3_TOKENS_COUNT) {
-      counter = await gpt3TokensCounter();
+      const loader = async (key, url) => {
+        try {
+          const raw = await DATABASE.get(key);
+          if (raw && raw !== '') {
+            return raw;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+        try {
+          const bpe = await fetch(url, {
+            headers: {
+              'User-Agent': CONST.USER_AGENT,
+            },
+          }).then((x) => x.text());
+          await DATABASE.put(key, bpe);
+          return bpe;
+        } catch (e) {
+          console.error(e);
+        }
+        return null;
+      };
+      counter = await gpt3TokensCounter( ENV.GPT3_TOKENS_COUNT_REPO, loader);
     }
   } catch (e) {
     console.error(e);
@@ -147,7 +168,7 @@ export async function tokensCounter() {
  * @param {Response} resp
  * @return {Response}
  */
-export function makeResponse200(resp) {
+export async function makeResponse200(resp) {
   if (resp === null) {
     return new Response('NOT HANDLED', {status: 200});
   }
@@ -155,9 +176,11 @@ export function makeResponse200(resp) {
     return resp;
   } else {
     // 如果返回4xx，5xx，Telegram会重试这个消息，后续消息就不会到达，所有webhook的错误都返回200
-    return new Response(resp.body, {status: 200, headers: {
-      'Original-Status': resp.status,
-      ...resp.headers,
-    }});
+    return new Response(resp.body, {
+      status: 200,
+      headers: {
+        'Original-Status': resp.status,
+        ...resp.headers,
+      }});
   }
 }

@@ -2,8 +2,7 @@ import {handleMessage} from './message.js';
 import {API_GUARD, DATABASE, ENV} from './env.js';
 import {bindCommandForTelegram, commandsDocument} from './command.js';
 import {bindTelegramWebHook, getBot} from './telegram.js';
-import {errorToString, historyPassword, makeResponse200, renderHTML} from './utils.js';
-import {gpt3TokensCounter} from './gpt3.js';
+import {errorToString, historyPassword, makeResponse200, renderHTML, tokensCounter} from './utils.js';
 
 
 const helpLink = 'https://github.com/TBXark/ChatGPT-Telegram-Workers/blob/master/doc/DEPLOY.md';
@@ -97,7 +96,7 @@ async function loadChatHistory(request) {
  */
 async function telegramWebhook(request) {
   try {
-    return makeResponse200(await handleMessage(request));
+    return await makeResponse200(await handleMessage(request));
   } catch (e) {
     console.error(e);
     return new Response(errorToString(e), {status: 200});
@@ -120,7 +119,7 @@ async function telegramSafeHook(request) {
     const url = new URL(request.url);
     url.pathname = url.pathname.replace('/safehook', '/webhook');
     request = new Request(url, request);
-    return makeResponse200(await API_GUARD.fetch(request));
+    return await makeResponse200(await API_GUARD.fetch(request));
   } catch (e) {
     console.error(e);
     return new Response(errorToString(e), {status: 200});
@@ -160,7 +159,7 @@ async function defaultIndexAction() {
  */
 async function gpt3TokenTest(request) {
   const text = new URL(request.url).searchParams.get('text') || 'Hello World';
-  const counter = await gpt3TokensCounter();
+  const counter = await tokensCounter();
   const HTML = renderHTML(`
     <h1>ChatGPT-Telegram-Workers</h1>
     <br/>
