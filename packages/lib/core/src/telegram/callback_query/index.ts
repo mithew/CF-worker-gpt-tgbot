@@ -1,13 +1,16 @@
+import type { WorkerContext } from '#/config';
 import type * as Telegram from 'telegram-bot-api-types';
-import type { WorkerContext } from '../../config';
 import { loadChatRoleWithContext } from '../command/auth';
 import { MessageSender } from '../sender';
 import { AgentListCallbackQueryHandler, ModelChangeCallbackQueryHandler, ModelListCallbackQueryHandler } from './system';
 
 const QUERY_HANDLERS = [
-    new AgentListCallbackQueryHandler(),
-    new ModelListCallbackQueryHandler(),
-    new ModelChangeCallbackQueryHandler(),
+    AgentListCallbackQueryHandler.Chat(),
+    AgentListCallbackQueryHandler.Image(),
+    ModelListCallbackQueryHandler.Chat(),
+    ModelListCallbackQueryHandler.Image(),
+    ModelChangeCallbackQueryHandler.Chat(),
+    ModelChangeCallbackQueryHandler.Image(),
 ];
 
 export async function handleCallbackQuery(callbackQuery: Telegram.CallbackQuery, context: WorkerContext): Promise<Response | null> {

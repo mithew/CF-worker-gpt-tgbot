@@ -1,11 +1,8 @@
-import type { WorkerContext } from '../config';
+import type { WorkerContext } from '#/config';
 import type { ChatAgent, HistoryItem, HistoryModifier, LLMChatParams, UserMessageItem } from './types';
-import { ENV } from '../config';
+import { ENV } from '#/config';
 import { extractTextContent } from './utils';
 
-/**
- * @returns {(function(string): number)}
- */
 function tokensCounter(): (text: string) => number {
     return (text) => {
         return text.length;

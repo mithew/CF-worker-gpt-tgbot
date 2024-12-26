@@ -1,4 +1,4 @@
-import { errorToString } from '../../route/utils';
+import { errorToString } from '#/utils/resp';
 
 export type QueryParams = Record<string, string | string[]>;
 export type RouterRequest = Request & {
@@ -44,6 +44,7 @@ export class Router {
 
     private createRouteRegex(path: string): RegExp {
         return new RegExp(`^${path
+            .replace(/\\/g, '\\\\') // escape backslashes
             .replace(/(\/?\.?):(\w+)\+/g, '($1(?<$2>*))') // greedy params
             .replace(/(\/?\.?):(\w+)/g, '($1(?<$2>[^$1/]+?))') // named params and image format
             .replace(/\./g, '\\.') // dot in path
